@@ -1,0 +1,12 @@
+# epn-ofile.pm
+# version 0.01
+# July 2018 [v0.01]
+#
+# This file explains some aspects of the epn-ofile.pm module.
+# 
+# The comments in epn-ofile.pm are currently the only documentation
+# for this module. For an example of usage, see ribotyper-v1, which
+# is, as of this writing, the only package that uses epn-ofile.pm:
+#
+# https://github.com/nawrockie/ribotyper-v1.git
+# 
