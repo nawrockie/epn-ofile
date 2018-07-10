@@ -1,9 +1,9 @@
-o#!/usr/bin/perl
+#!/usr/bin/perl
 #
 # epn-ofile.pm
 # Eric Nawrocki
 # EPN, Thu May 24 15:38:09 2018 
-# version: 0.00
+# version: 0.02
 #
 use strict;
 use warnings;
