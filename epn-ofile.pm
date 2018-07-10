@@ -1,4 +1,4 @@
-o#!/usr/bin/perl
+#!/usr/bin/perl
 #
 # epn-ofile.pm
 # Eric Nawrocki
