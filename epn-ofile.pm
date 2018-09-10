@@ -3,7 +3,7 @@
 # epn-ofile.pm
 # Eric Nawrocki
 # EPN, Thu May 24 15:38:09 2018 
-# version: 0.04
+# version: 0.05
 #
 use strict;
 use warnings;
@@ -416,8 +416,8 @@ sub ofile_OutputProgressComplete {
     if(defined $FH2) { printf $FH2 (" ["); }
   }
   if(defined $total_secs) { 
-    if(defined $FH1) { printf $FH1 (sprintf("%.1f seconds%s", $total_secs, (defined $extra_desc) ? ", " : "")); }
-    if(defined $FH2) { printf $FH2 (sprintf("%.1f seconds%s", $total_secs, (defined $extra_desc) ? ", " : "")); }
+    if(defined $FH1) { printf $FH1 (sprintf("%7.1f seconds%s", $total_secs, (defined $extra_desc) ? ", " : "")); }
+    if(defined $FH2) { printf $FH2 (sprintf("%7.1f seconds%s", $total_secs, (defined $extra_desc) ? ", " : "")); }
   }
   if(defined $extra_desc) { 
     if(defined $FH1) { printf $FH1 $extra_desc };
