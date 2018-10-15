@@ -500,7 +500,7 @@ sub ofile_OutputConclusionAndCloseFiles {
     ofile_OutputString($log_FH, 1, sprintf("#\n"));
     if($total_secs ne "") { # don't print this if rvr-align is caller
       ofile_OutputTiming("# Elapsed time: ", $total_secs, 1, $log_FH); 
-      ofile_OutputString($log_FH, 1, "#            hh:mm:ss\n");
+      ofile_OutputString($log_FH, 1, "#                hh:mm:ss\n");
       ofile_OutputString($log_FH, 1, "# \n");
       ofile_OutputString($log_FH, 1, "# " . $pkgstr . "-SUCCESS\n");
     }
