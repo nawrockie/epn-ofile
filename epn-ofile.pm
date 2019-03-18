@@ -474,37 +474,36 @@ sub ofile_OutputConclusionAndCloseFiles {
   # output the list of files that we created for which the 'mainout' variable 
   # is 1 to the $log file and stdout, we already printed the descriptions
   # to the list file in helperAddFileToOutputInfo().
-  if(defined $log_FH) { 
-    ofile_OutputString($log_FH, 1, sprintf("#\n"));
-    # create a temporary array with description of files with 'outmain' set to 1 (we'll only print these)
-    # so we get pretty formatting
-    my @tmp_A = ();
-    foreach $key2d (keys (%{$ofile_info_HHR->{"desc"}})) { 
-      if($ofile_info_HHR->{"mainout"}{$key2d}) { 
-        push(@tmp_A, $ofile_info_HHR->{"desc"}{$key2d});
-      }
-    }
-    my $width_desc = length("# ") + ofile_MaxLengthScalarValueInArray(\@tmp_A) + length(" saved in:");
-    my $cur_idx = 1;
-    my $num_ofile = ofile_ValidateOutputFileInfoHashOfHashes($ofile_info_HHR, $pkgstr); # this function validates we have exactly 1 of each "order" value of 1..$num_ofile
-    for(my $i = 1; $i <= $num_ofile; $i++) { 
-      foreach $key2d (keys (%{$ofile_info_HHR->{"order"}})) { 
-        if(($ofile_info_HHR->{"order"}{$key2d} == $i) && 
-           ($ofile_info_HHR->{"mainout"}{$key2d})) { # only print out files for which the special "mainout" value is '1'
-          ofile_OutputString($log_FH, 1, sprintf("# %-*s %s\n", $width_desc, $ofile_info_HHR->{"desc"}{$key2d} . " saved in:", $ofile_info_HHR->{"nodirpath"}{$key2d}));
-        }
-      }
-    }
-    ofile_OutputString($log_FH, 1, sprintf("#\n"));
-    ofile_OutputString($log_FH, 1, sprintf("# All output files created in %s\n", ($odir eq "") ? "the current working directory" : "directory \.\/$odir\/"));
-    ofile_OutputString($log_FH, 1, sprintf("#\n"));
-    if($total_secs ne "") { # don't print this if rvr-align is caller
-      ofile_OutputTiming("# Elapsed time: ", $total_secs, 1, $log_FH); 
-      ofile_OutputString($log_FH, 1, "#                hh:mm:ss\n");
-      ofile_OutputString($log_FH, 1, "# \n");
-      ofile_OutputString($log_FH, 1, "# " . $pkgstr . "-SUCCESS\n");
+  ofile_OutputString($log_FH, 1, sprintf("#\n"));
+  # create a temporary array with description of files with 'outmain' set to 1 (we'll only print these)
+  # so we get pretty formatting
+  my @tmp_A = ();
+  foreach $key2d (keys (%{$ofile_info_HHR->{"desc"}})) { 
+    if($ofile_info_HHR->{"mainout"}{$key2d}) { 
+      push(@tmp_A, $ofile_info_HHR->{"desc"}{$key2d});
     }
   }
+  my $width_desc = length("# ") + ofile_MaxLengthScalarValueInArray(\@tmp_A) + length(" saved in:");
+  my $cur_idx = 1;
+  my $num_ofile = ofile_ValidateOutputFileInfoHashOfHashes($ofile_info_HHR, $pkgstr); # this function validates we have exactly 1 of each "order" value of 1..$num_ofile
+  for(my $i = 1; $i <= $num_ofile; $i++) { 
+    foreach $key2d (keys (%{$ofile_info_HHR->{"order"}})) { 
+      if(($ofile_info_HHR->{"order"}{$key2d} == $i) && 
+         ($ofile_info_HHR->{"mainout"}{$key2d})) { # only print out files for which the special "mainout" value is '1'
+        ofile_OutputString($log_FH, 1, sprintf("# %-*s %s\n", $width_desc, $ofile_info_HHR->{"desc"}{$key2d} . " saved in:", $ofile_info_HHR->{"nodirpath"}{$key2d}));
+      }
+    }
+  }
+  ofile_OutputString($log_FH, 1, sprintf("#\n"));
+  ofile_OutputString($log_FH, 1, sprintf("# All output files created in %s\n", ($odir eq "") ? "the current working directory" : "directory \.\/$odir\/"));
+  ofile_OutputString($log_FH, 1, sprintf("#\n"));
+  if($total_secs ne "") { # don't print this if rvr-align is caller
+    ofile_OutputTiming("# Elapsed time: ", $total_secs, 1, $log_FH); 
+    ofile_OutputString($log_FH, 1, "#                hh:mm:ss\n");
+    ofile_OutputString($log_FH, 1, "# \n");
+    ofile_OutputString($log_FH, 1, "# " . $pkgstr . "-SUCCESS\n");
+  }
+
   if(defined $cmd_FH) { 
     ofile_OutputString($cmd_FH, 0, "# " . `date`);      # prints date,        e.g.: 'Mon Feb 22 16:37:09 EST 2016'
     ofile_OutputString($cmd_FH, 0, "# " . `uname -a`);  # prints system info, e.g.: 'Linux cbbdev13 2.6.32-573.7.1.el6.x86_64 #1 SMP Tue Sep 22 22:00:00 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux'
@@ -512,7 +511,7 @@ sub ofile_OutputConclusionAndCloseFiles {
       ofile_OutputString($cmd_FH, 0, "# " . $pkgstr . "-SUCCESS\n");
     }
   }
-
+  
   # close any open file handles
   foreach $key2d (keys (%{$ofile_info_HHR->{"FH"}})) { 
     if(defined $ofile_info_HHR->{"FH"}{$key2d}) { 
