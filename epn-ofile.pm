@@ -925,7 +925,8 @@ sub ofile_FAIL {
 #
 # Arguments: 
 #   $data_AAR:  ref to 2D array of table data [0..$nrow-1][0..$ncol-1], 
-#               must be defined
+#               must be defined, if $data_AAR->[$x] is undef, we will 
+#               print a blank line (prefixed with $pfx_com)
 #   $head_AAR:  ref to 2D array of header info [0..$nrow-1][0..$ncol-1], 
 #               can be undef, will print no header if undefined
 #   $cljust_AR: ref to '1'/'0' array of indicating if a column is left justified
@@ -979,7 +980,7 @@ sub ofile_TableHumanOutput {
   if($nrow_data > 0) { 
     $ncol_data = scalar(@{$data_AAR->[0]});
     for($r = 1; $r < $nrow_data; $r++) { 
-      if(scalar(@{$data_AAR->[$r]}) != $ncol_data) { 
+      if((scalar(@{$data_AAR->[$r]}) > 0) && (scalar(@{$data_AAR->[$r]}) != $ncol_data)) { # allow empty arrays --> blank lines
       ofile_FAIL("ERROR in $sub_name, data row 1 has $ncol_data columns, but row " . ($r+1) . " has " . scalar(@{$data_AAR->[$r]}) . " columns", undef, 1, $FH_HR);
       }
     }
@@ -1048,9 +1049,11 @@ sub ofile_TableHumanOutput {
   for($c = 0; $c < $ncol; $c++) { $w_A[$c] = 0; } # initialize
   # consider data in each data row
   for($r = 0; $r < $nrow_data; $r++) { 
-    $w_A[0] = utl_Max($w_A[0], length($data_AAR->[$r][0]) + length($pfx_data)); 
-    for($c = 1; $c < $ncol; $c++) { 
-      $w_A[$c] = utl_Max($w_A[$c], length($data_AAR->[$r][$c])); 
+    if(scalar(@{$data_AAR->[$r]}) > 0) { 
+      $w_A[0] = utl_Max($w_A[0], length($data_AAR->[$r][0]) + length($pfx_data)); 
+      for($c = 1; $c < ($ncol-1); $c++) { # don't update w_A for final column
+        $w_A[$c] = utl_Max($w_A[$c], length($data_AAR->[$r][$c])); 
+      }
     }
   }
   # consider headers in each header row
@@ -1075,7 +1078,7 @@ sub ofile_TableHumanOutput {
   
   # output header lines
   if(defined $head_AAR) { 
-    _ofile_helper_output_table_data($head_AAR, \@w_A, \@cljust_A, $pfx_head, $csep, $out_FH1, $out_FH2);
+    _ofile_helper_output_table_data($head_AAR, \@w_A, \@cljust_A, $pfx_head, $csep, "#\n", $out_FH1, $out_FH2);
   }
 
   # output header sep line
@@ -1099,7 +1102,7 @@ sub ofile_TableHumanOutput {
   }
   
   # output data lines
-  _ofile_helper_output_table_data($data_AAR, \@w_A, \@cljust_A, $pfx_data, $csep, $out_FH1, $out_FH2);
+  _ofile_helper_output_table_data($data_AAR, \@w_A, \@cljust_A, $pfx_data, $csep, "#\n", $out_FH1, $out_FH2);
 
   # output after table comment lines
   if(defined $acom_AR) { 
@@ -1127,25 +1130,26 @@ sub ofile_TableHumanOutput {
 #              caller should have already done that.
 #
 # Arguments: 
-#   $AAR:      ref to 2D array of output text [0..$nrow-1][0..$ncol-1], 
-#              must be defined
-#   $w_AR:     ref to array of widths per column
-#   $lj_AR:    ref to '1'/'0' array of indicating if a column is left justified
-#   $pfx_head: header line prefix
-#   $csep:     column separation string, typically "  "
-#   $FH1:      output file handle 1
-#   $FH2:      output file handle 2
+#   $AAR:        ref to 2D array of output text [0..$nrow-1][0..$ncol-1], 
+#                must be defined
+#   $w_AR:       ref to array of widths per column
+#   $lj_AR:      ref to '1'/'0' array of indicating if a column is left justified
+#   $pfx_head:   header line prefix
+#   $csep:       column separation string, typically "  "
+#   $empty_line: line to print for empty rows
+#   $FH1:        output file handle 1
+#   $FH2:        output file handle 2
 # 
-# Returns:     Nothing.
+# Returns:       Nothing.
 #
 # Dies: Never. 
 ################################################################# 
 sub _ofile_helper_output_table_data { 
-  my $nargs_expected = 7;
+  my $nargs_expected = 8;
   my $sub_name = "_ofile_helper_output_table_data";
   if(scalar(@_) != $nargs_expected) { die "ERROR $sub_name entered with wrong number of input args"; }
 
-  my ($AAR, $w_AR, $lj_AR, $pfx_head, $csep, $FH1, $FH2) = (@_);
+  my ($AAR, $w_AR, $lj_AR, $pfx_head, $csep, $empty_line, $FH1, $FH2) = (@_);
 
   my $nrow = scalar(@{$AAR});
   my $r; # counter over rows
@@ -1157,19 +1161,19 @@ sub _ofile_helper_output_table_data {
       $out_line = sprintf("%-*s", $w_AR->[0], $pfx_head . $AAR->[$r][0]);
       if($ncol > 1) { 
         $out_line .= $csep; 
-        for($c = 1; $c < ($ncol-1); $c++) { 
+        for($c = 1; $c < $ncol; $c++) { 
           if($lj_AR->[$c]) { $out_line .= sprintf("%-*s", $w_AR->[$c], $AAR->[$r][$c]); }
           else             { $out_line .= sprintf("%*s",  $w_AR->[$c], $AAR->[$r][$c]); }
           $out_line .= $csep; 
         }
-        # do not use fixed width for final column
-        $c = ($ncol-1);
-        if($lj_AR->[$c]) { $out_line .= sprintf("%-s", $AAR->[$r][$c]); }
-        else             { $out_line .= sprintf("%s",  $AAR->[$r][$c]); }
       }
       $out_line .= "\n";
       print $FH1 $out_line;
       if(defined $FH2) { print $FH2 $out_line; }
+    }
+    else { # empty array, print empty line
+      print $FH1 $empty_line;
+      if(defined $FH2) { print $FH2 $empty_line; }
     }
   }
 
