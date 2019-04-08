@@ -924,43 +924,45 @@ sub ofile_FAIL {
 #              width columns.
 #
 # Arguments: 
-#   $data_AAR:  ref to 2D array of table data [0..$nrow-1][0..$ncol-1], 
-#               must be defined, if $data_AAR->[$x] is undef, we will 
-#               print a blank line (prefixed with $pfx_com)
-#   $head_AAR:  ref to 2D array of header info [0..$nrow-1][0..$ncol-1], 
-#               can be undef, will print no header if undefined
-#   $cljust_AR: ref to '1'/'0' array of indicating if a column is left justified
-#               or not, can be undef, all columns will be left just if undefined
-#               $cljust_A[0] will be set to '1' regardless of input
-#   $bcom_AR:   ref to array of comment lines to add before table, 
-#               can be undef, no lines if undefined
-#   $acom_AR:   ref to array of comment lines to add after table, 
-#               can be undef, no lines if undefined
-#   $csep:      column separation string, can be undef
-#               set to "  " if undef
-#   $hsep:      header separation line character, "" for no line, 
-#               can be undef, set to "-" if undef
-#   $pfx_head:  header row prefix string, "" for none, 
-#               can be undef set to "#" if undef
-#   $pfx_com:   comment row prefix string, "" for none, 
-#               can be undef, set to "# " if undef
-#   $pfx_data:  data row prefix string, "" for none, can be undef
-#               set to "" if undef
-#   $out_FH1:   ref to output file handle 1, must be defined
-#   $out_FH2:   ref to output file handle 1, can be undef
-#   $FH_HR:     ref to hash of other file handles, including "log" and "cmd"
-# 
+#   $data_AAR:   ref to 2D array of table data [0..$nrow-1][0..$ncol-1], 
+#                must be defined, if $data_AAR->[$x] is undef, we will 
+#                print a blank line (prefixed with $pfx_com)
+#   $head_AAR:   ref to 2D array of header info [0..$nrow-1][0..$ncol-1], 
+#                can be undef, will print no header if undefined
+#   $cljust_AR:  ref to '1'/'0' array of indicating if a column is left justified
+#                or not, can be undef, all columns will be left just if undefined
+#                $cljust_A[0] will be set to '1' regardless of input
+#   $bcom_AR:    ref to array of comment lines to add before table, 
+#                can be undef, no lines if undefined
+#   $acom_AR:    ref to array of comment lines to add after table, 
+#                can be undef, no lines if undefined
+#   $csep:       column separation string, can be undef
+#                set to "  " if undef
+#   $hsep:       header separation line character, "" for no line, 
+#                can be undef, set to "-" if undef
+#   $pfx_head:   header row prefix string, "" for none, 
+#                can be undef set to "#" if undef
+#   $pfx_com:    comment row prefix string, "" for none, 
+#                can be undef, set to "# " if undef
+#   $pfx_data:   data row prefix string, "" for none, can be undef
+#                set to "" if undef
+#   $empty_flag: '1' to output empty lines for empty arrays of data, '0'
+#                to output empty lines as header separation lines
+#   $out_FH1:    ref to output file handle 1, must be defined
+#   $out_FH2:    ref to output file handle 1, can be undef
+#   $FH_HR:      ref to hash of other file handles, including "log" and "cmd"
+#  
 # Returns:     Nothing.
 #
 # Dies:        
 ################################################################# 
 sub ofile_TableHumanOutput { 
-  my $nargs_expected = 13;
+  my $nargs_expected = 14;
   my $sub_name = "ofile_TableHumanOutput";
   if(scalar(@_) != $nargs_expected) { die "ERROR $sub_name entered with wrong number of input args"; }
   
   my ($data_AAR, $head_AAR, $cljust_AR, $bcom_AR, $acom_AR, $csep, $hsep, 
-      $pfx_head, $pfx_com, $pfx_data, $out_FH1, $out_FH2, $FH_HR) = (@_);
+      $pfx_head, $pfx_com, $pfx_data, $empty_flag, $out_FH1, $out_FH2, $FH_HR) = (@_);
 
   # contract checks to make sure we have our required input
   # $data_AAR must be defined and have at least 1 row
@@ -972,19 +974,27 @@ sub ofile_TableHumanOutput {
     ofile_FAIL("ERROR in $sub_name, output file handle 1 is not defined", undef, 1, $FH_HR);
   }
 
-  # make sure all per-column data has same number of columns
+  # make sure all per-column data that are not empty have same number of columns
   my $r; # row counter
   my $c; # column counter
   my $ncol_data = 0;
   my $nrow_data = scalar(@{$data_AAR});
   if($nrow_data > 0) { 
-    $ncol_data = scalar(@{$data_AAR->[0]});
-    for($r = 1; $r < $nrow_data; $r++) { 
-      if((scalar(@{$data_AAR->[$r]}) > 0) && (scalar(@{$data_AAR->[$r]}) != $ncol_data)) { # allow empty arrays --> blank lines
-      ofile_FAIL("ERROR in $sub_name, data row 1 has $ncol_data columns, but row " . ($r+1) . " has " . scalar(@{$data_AAR->[$r]}) . " columns", undef, 1, $FH_HR);
+    $r = 0;
+    while(($r < $nrow_data) && (scalar(@{$data_AAR->[$r]}) == 0)) { 
+      $r++; 
+    }
+    if($r < $nrow_data) { 
+      $ncol_data = scalar(@{$data_AAR->[$r]});
+      my $first_r = $r;
+      for($r = ($first_r+1); $r < $nrow_data; $r++) { 
+        if((scalar(@{$data_AAR->[$r]}) > 0) && (scalar(@{$data_AAR->[$r]}) != $ncol_data)) { # allow empty arrays --> blank lines
+          ofile_FAIL("ERROR in $sub_name, data row %d has $ncol_data columns, but row " . ($first_r+1) . " has " . scalar(@{$data_AAR->[$r]}) . " columns", undef, 1, $FH_HR);
+        }
       }
     }
   }
+
   my $nrow_head = (defined $head_AAR) ? scalar(@{$head_AAR}) : 0;
   my $ncol_head = 0;
   if($nrow_head > 0) { 
@@ -1030,6 +1040,7 @@ sub ofile_TableHumanOutput {
 
   # enforce defaults
   if(! defined $csep)      { $csep     = "  "; }
+  if(! defined $hsep)      { $hsep     = "-"; }
   if(! defined $pfx_head)  { $pfx_head = "#";  }
   if(! defined $pfx_com)   { $pfx_com  = "# "; }
   if(! defined $pfx_data)  { $pfx_data = "";   }
@@ -1075,34 +1086,41 @@ sub ofile_TableHumanOutput {
       if(defined $out_FH2) { print $out_FH2 $out_line; }
     }
   }
-  
-  # output header lines
-  if(defined $head_AAR) { 
-    _ofile_helper_output_table_data($head_AAR, \@w_A, \@cljust_A, $pfx_head, $csep, "#\n", $out_FH1, $out_FH2);
-  }
 
-  # output header sep line
-  if(($nrow_head > 0) && ($hsep ne "")) { 
-    $out_line = $pfx_head . utl_StringMonoChar($w_A[0]-1, $hsep, undef);
-    if($ncol > 1) { $out_line .= $csep; }
+  # create the header separation line
+  my $head_sep_line = undef;
+  if($hsep ne "") { 
+    $head_sep_line = $pfx_head . utl_StringMonoChar($w_A[0]-1, $hsep, undef);
+    if($ncol > 1) { $head_sep_line .= $csep; }
     for($c = 1; $c < ($ncol-1); $c++) { 
-      $out_line .= utl_StringMonoChar($w_A[$c], $hsep, undef);
-      $out_line .= $csep;
+      $head_sep_line .= utl_StringMonoChar($w_A[$c], $hsep, undef);
+      $head_sep_line .= $csep;
     }
-
     # determine width of final head separation line token
     my $w_final = 0; # max width of final header column over all rows 
     for($r = 0; $r < $nrow_head; $r++) { 
       $w_final = utl_Max($w_final, length($head_AAR->[$r][($ncol-1)]));
     }
-    $out_line .= utl_StringMonoChar($w_final, $hsep, undef) . "\n";
- 
-    print $out_FH1 $out_line;
-    if(defined $out_FH2) { print $out_FH2 $out_line; }
+    $head_sep_line .= utl_StringMonoChar($w_final, $hsep, undef) . "\n";
   }
+  else { # $hsep eq ""
+    $head_sep_line = $pfx_head . "\n" 
+  }
+  my $empty_sep_line = ($empty_flag) ? ($pfx_com . "\n") : $head_sep_line;
   
+  # output header lines
+  if(defined $head_AAR) { 
+    _ofile_helper_output_table_data($head_AAR, \@w_A, \@cljust_A, $pfx_head, $csep, $empty_sep_line, $out_FH1, $out_FH2);
+  }
+
+  # output header sep line
+  if($nrow_head > 0) { 
+    print $out_FH1 $head_sep_line;
+    if(defined $out_FH2) { print $out_FH2 $head_sep_line; }
+  }
+
   # output data lines
-  _ofile_helper_output_table_data($data_AAR, \@w_A, \@cljust_A, $pfx_data, $csep, "#\n", $out_FH1, $out_FH2);
+  _ofile_helper_output_table_data($data_AAR, \@w_A, \@cljust_A, $pfx_data, $csep, $empty_sep_line, $out_FH1, $out_FH2);
 
   # output after table comment lines
   if(defined $acom_AR) { 
@@ -1116,7 +1134,6 @@ sub ofile_TableHumanOutput {
 
   return;
 }
-    
     
 #################################################################
 # Subroutine:  _ofile_helper_output_table_data()
@@ -1134,9 +1151,9 @@ sub ofile_TableHumanOutput {
 #                must be defined
 #   $w_AR:       ref to array of widths per column
 #   $lj_AR:      ref to '1'/'0' array of indicating if a column is left justified
-#   $pfx_head:   header line prefix
+#   $pfx:        prefix for all lines, "" for none
 #   $csep:       column separation string, typically "  "
-#   $empty_line: line to print for empty rows
+#   $empty_line: line to output for empty arrays
 #   $FH1:        output file handle 1
 #   $FH2:        output file handle 2
 # 
@@ -1149,7 +1166,7 @@ sub _ofile_helper_output_table_data {
   my $sub_name = "_ofile_helper_output_table_data";
   if(scalar(@_) != $nargs_expected) { die "ERROR $sub_name entered with wrong number of input args"; }
 
-  my ($AAR, $w_AR, $lj_AR, $pfx_head, $csep, $empty_line, $FH1, $FH2) = (@_);
+  my ($AAR, $w_AR, $lj_AR, $pfx, $csep, $empty_line, $FH1, $FH2) = (@_);
 
   my $nrow = scalar(@{$AAR});
   my $r; # counter over rows
@@ -1158,13 +1175,13 @@ sub _ofile_helper_output_table_data {
   for($r = 0; $r < $nrow; $r++) { 
     my $ncol = scalar(@{$AAR->[$r]});
     if($ncol > 0) { 
-      $out_line = sprintf("%-*s", $w_AR->[0], $pfx_head . $AAR->[$r][0]);
+      $out_line = sprintf("%-*s", $w_AR->[0], $pfx . $AAR->[$r][0]);
       if($ncol > 1) { 
         $out_line .= $csep; 
         for($c = 1; $c < $ncol; $c++) { 
           if($lj_AR->[$c]) { $out_line .= sprintf("%-*s", $w_AR->[$c], $AAR->[$r][$c]); }
           else             { $out_line .= sprintf("%*s",  $w_AR->[$c], $AAR->[$r][$c]); }
-          $out_line .= $csep; 
+          if($c < ($ncol-1)) { $out_line .= $csep; }
         }
       }
       $out_line .= "\n";
