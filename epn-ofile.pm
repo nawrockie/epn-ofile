@@ -474,37 +474,36 @@ sub ofile_OutputConclusionAndCloseFiles {
   # output the list of files that we created for which the 'mainout' variable 
   # is 1 to the $log file and stdout, we already printed the descriptions
   # to the list file in helperAddFileToOutputInfo().
-  if(defined $log_FH) { 
-    ofile_OutputString($log_FH, 1, sprintf("#\n"));
-    # create a temporary array with description of files with 'outmain' set to 1 (we'll only print these)
-    # so we get pretty formatting
-    my @tmp_A = ();
-    foreach $key2d (keys (%{$ofile_info_HHR->{"desc"}})) { 
-      if($ofile_info_HHR->{"mainout"}{$key2d}) { 
-        push(@tmp_A, $ofile_info_HHR->{"desc"}{$key2d});
-      }
-    }
-    my $width_desc = length("# ") + ofile_MaxLengthScalarValueInArray(\@tmp_A) + length(" saved in:");
-    my $cur_idx = 1;
-    my $num_ofile = ofile_ValidateOutputFileInfoHashOfHashes($ofile_info_HHR, $pkgstr); # this function validates we have exactly 1 of each "order" value of 1..$num_ofile
-    for(my $i = 1; $i <= $num_ofile; $i++) { 
-      foreach $key2d (keys (%{$ofile_info_HHR->{"order"}})) { 
-        if(($ofile_info_HHR->{"order"}{$key2d} == $i) && 
-           ($ofile_info_HHR->{"mainout"}{$key2d})) { # only print out files for which the special "mainout" value is '1'
-          ofile_OutputString($log_FH, 1, sprintf("# %-*s %s\n", $width_desc, $ofile_info_HHR->{"desc"}{$key2d} . " saved in:", $ofile_info_HHR->{"nodirpath"}{$key2d}));
-        }
-      }
-    }
-    ofile_OutputString($log_FH, 1, sprintf("#\n"));
-    ofile_OutputString($log_FH, 1, sprintf("# All output files created in %s\n", ($odir eq "") ? "the current working directory" : "directory \.\/$odir\/"));
-    ofile_OutputString($log_FH, 1, sprintf("#\n"));
-    if($total_secs ne "") { # don't print this if rvr-align is caller
-      ofile_OutputTiming("# Elapsed time: ", $total_secs, 1, $log_FH); 
-      ofile_OutputString($log_FH, 1, "#                hh:mm:ss\n");
-      ofile_OutputString($log_FH, 1, "# \n");
-      ofile_OutputString($log_FH, 1, "# " . $pkgstr . "-SUCCESS\n");
+  ofile_OutputString($log_FH, 1, sprintf("#\n"));
+  # create a temporary array with description of files with 'outmain' set to 1 (we'll only print these)
+  # so we get pretty formatting
+  my @tmp_A = ();
+  foreach $key2d (keys (%{$ofile_info_HHR->{"desc"}})) { 
+    if($ofile_info_HHR->{"mainout"}{$key2d}) { 
+      push(@tmp_A, $ofile_info_HHR->{"desc"}{$key2d});
     }
   }
+  my $width_desc = length("# ") + ofile_MaxLengthScalarValueInArray(\@tmp_A) + length(" saved in:");
+  my $cur_idx = 1;
+  my $num_ofile = ofile_ValidateOutputFileInfoHashOfHashes($ofile_info_HHR, $pkgstr); # this function validates we have exactly 1 of each "order" value of 1..$num_ofile
+  for(my $i = 1; $i <= $num_ofile; $i++) { 
+    foreach $key2d (keys (%{$ofile_info_HHR->{"order"}})) { 
+      if(($ofile_info_HHR->{"order"}{$key2d} == $i) && 
+         ($ofile_info_HHR->{"mainout"}{$key2d})) { # only print out files for which the special "mainout" value is '1'
+        ofile_OutputString($log_FH, 1, sprintf("# %-*s %s\n", $width_desc, $ofile_info_HHR->{"desc"}{$key2d} . " saved in:", $ofile_info_HHR->{"nodirpath"}{$key2d}));
+      }
+    }
+  }
+  ofile_OutputString($log_FH, 1, sprintf("#\n"));
+  ofile_OutputString($log_FH, 1, sprintf("# All output files created in %s\n", ($odir eq "") ? "the current working directory" : "directory \.\/$odir\/"));
+  ofile_OutputString($log_FH, 1, sprintf("#\n"));
+  if($total_secs ne "") { # don't print this if rvr-align is caller
+    ofile_OutputTiming("# Elapsed time: ", $total_secs, 1, $log_FH); 
+    ofile_OutputString($log_FH, 1, "#                hh:mm:ss\n");
+    ofile_OutputString($log_FH, 1, "# \n");
+    ofile_OutputString($log_FH, 1, "# " . $pkgstr . "-SUCCESS\n");
+  }
+
   if(defined $cmd_FH) { 
     ofile_OutputString($cmd_FH, 0, "# " . `date`);      # prints date,        e.g.: 'Mon Feb 22 16:37:09 EST 2016'
     ofile_OutputString($cmd_FH, 0, "# " . `uname -a`);  # prints system info, e.g.: 'Linux cbbdev13 2.6.32-573.7.1.el6.x86_64 #1 SMP Tue Sep 22 22:00:00 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux'
@@ -512,7 +511,7 @@ sub ofile_OutputConclusionAndCloseFiles {
       ofile_OutputString($cmd_FH, 0, "# " . $pkgstr . "-SUCCESS\n");
     }
   }
-
+  
   # close any open file handles
   foreach $key2d (keys (%{$ofile_info_HHR->{"FH"}})) { 
     if(defined $ofile_info_HHR->{"FH"}{$key2d}) { 
@@ -869,7 +868,7 @@ sub ofile_FileOpenFailure {
 #
 # Arguments: 
 #   $errmsg:  the error message to write
-#   $pkgstr:  string describing the package for FAILURE message
+#   $pkgstr:  string describing the package for FAILURE message, can be undef
 #   $status:  error status to exit with
 #   $FH_HR:   ref to hash of file handles, including "log" and "cmd"
 # 
@@ -899,11 +898,11 @@ sub ofile_FAIL {
     my $log_FH = $FH_HR->{"log"};
     if(defined $cmd_FH) { 
       print  $cmd_FH $errmsg;
-      printf $cmd_FH ("# %s-FAILURE\n", $pkgstr);
+      printf $cmd_FH ("# %sFAILURE\n", (defined $pkgstr) ? $pkgstr . "-" : "");
     }
     if(defined $log_FH) {
       print  $log_FH $errmsg;
-      printf $log_FH ("# %s-FAILURE\n", $pkgstr);
+      printf $log_FH ("# %sFAILURE\n", (defined $pkgstr) ? $pkgstr . "-" : "");
     }
     # close each file handle
     foreach my $key (keys %{$FH_HR}) { 
@@ -916,6 +915,288 @@ sub ofile_FAIL {
   printf STDERR $errmsg; 
   exit($status);
 }
+
+#################################################################
+# Subroutine:  ofile_TableHumanOutput()
+# Incept:      EPN, Fri Apr  5 05:34:54 2019
+#
+# Purpose:     Output a human readable table with appropriate
+#              width columns.
+#
+# Arguments: 
+#   $data_AAR:   ref to 2D array of table data [0..$nrow-1][0..$ncol-1], 
+#                must be defined, if $data_AAR->[$x] is undef, we will 
+#                print a blank line (prefixed with $pfx_com)
+#   $head_AAR:   ref to 2D array of header info [0..$nrow-1][0..$ncol-1], 
+#                can be undef, will print no header if undefined
+#   $cljust_AR:  ref to '1'/'0' array of indicating if a column is left justified
+#                or not, can be undef, all columns will be left just if undefined
+#                $cljust_A[0] will be set to '1' regardless of input
+#   $bcom_AR:    ref to array of comment lines to add before table, 
+#                can be undef, no lines if undefined
+#   $acom_AR:    ref to array of comment lines to add after table, 
+#                can be undef, no lines if undefined
+#   $csep:       column separation string, can be undef
+#                set to "  " if undef
+#   $hsep:       header separation line character, "" for no line, 
+#                can be undef, set to "-" if undef
+#   $pfx_head:   header row prefix string, "" for none, 
+#                can be undef set to "#" if undef
+#   $pfx_com:    comment row prefix string, "" for none, 
+#                can be undef, set to "# " if undef
+#   $pfx_data:   data row prefix string, "" for none, can be undef
+#                set to "" if undef
+#   $empty_flag: '1' to output empty lines for empty arrays of data, '0'
+#                to output empty lines as header separation lines
+#   $out_FH1:    ref to output file handle 1, must be defined
+#   $out_FH2:    ref to output file handle 1, can be undef
+#   $FH_HR:      ref to hash of other file handles, including "log" and "cmd"
+#  
+# Returns:     Nothing.
+#
+# Dies:        
+################################################################# 
+sub ofile_TableHumanOutput { 
+  my $nargs_expected = 14;
+  my $sub_name = "ofile_TableHumanOutput";
+  if(scalar(@_) != $nargs_expected) { die "ERROR $sub_name entered with wrong number of input args"; }
+  
+  my ($data_AAR, $head_AAR, $cljust_AR, $bcom_AR, $acom_AR, $csep, $hsep, 
+      $pfx_head, $pfx_com, $pfx_data, $empty_flag, $out_FH1, $out_FH2, $FH_HR) = (@_);
+
+  # contract checks to make sure we have our required input
+  # $data_AAR must be defined and have at least 1 row
+  if(! defined $data_AAR) { 
+    ofile_FAIL("ERROR in $sub_name, data 2D array is not defined", undef, 1, $FH_HR);
+  }
+  # $out_FH1 must be defined
+  if(! defined $out_FH1) { 
+    ofile_FAIL("ERROR in $sub_name, output file handle 1 is not defined", undef, 1, $FH_HR);
+  }
+
+  # make sure all per-column data that are not empty have same number of columns
+  my $r; # row counter
+  my $c; # column counter
+  my $ncol_data = 0;
+  my $nrow_data = scalar(@{$data_AAR});
+  if($nrow_data > 0) { 
+    $r = 0;
+    while(($r < $nrow_data) && (scalar(@{$data_AAR->[$r]}) == 0)) { 
+      $r++; 
+    }
+    if($r < $nrow_data) { 
+      $ncol_data = scalar(@{$data_AAR->[$r]});
+      my $first_r = $r;
+      for($r = ($first_r+1); $r < $nrow_data; $r++) { 
+        if((scalar(@{$data_AAR->[$r]}) > 0) && (scalar(@{$data_AAR->[$r]}) != $ncol_data)) { # allow empty arrays --> blank lines
+          ofile_FAIL("ERROR in $sub_name, data row %d has $ncol_data columns, but row " . ($first_r+1) . " has " . scalar(@{$data_AAR->[$r]}) . " columns", undef, 1, $FH_HR);
+        }
+      }
+    }
+  }
+
+  my $nrow_head = (defined $head_AAR) ? scalar(@{$head_AAR}) : 0;
+  my $ncol_head = 0;
+  if($nrow_head > 0) { 
+    $ncol_head = scalar(@{$head_AAR->[0]});
+    if((defined $head_AAR) && (scalar(@{$head_AAR}) == 0)) { 
+      ofile_FAIL("ERROR in $sub_name, header defined but is empty", undef, 1, $FH_HR);
+    }
+    for($r = 1; $r < $nrow_head; $r++) { 
+      if(scalar(@{$head_AAR->[$r]}) != $ncol_head) { 
+        ofile_FAIL("ERROR in $sub_name, header row 1 has $ncol_head columns, but header row " . ($r+1) . " has " . scalar(@{$head_AAR->[$r]}) . " columns", undef, 1, $FH_HR);
+      }
+    }
+  }
+  my $ncol;
+  if(($ncol_head == 0) && ($ncol_data == 0)) { 
+    ofile_FAIL("ERROR in $sub_name, data 2D array and header 2D arrays are both empty", undef, 1, $FH_HR);
+  }
+  elsif(($ncol_head > 0) && ($ncol_data == 0)) { 
+    $ncol = $ncol_head;
+  }
+  elsif(($ncol_head == 0) && ($ncol_data > 0)) { 
+    $ncol = $ncol_data;
+  }
+  elsif($ncol_head == $ncol_data) { 
+    $ncol = $ncol_data;
+  }
+  else { 
+    ofile_FAIL("ERROR in $sub_name, data num columns ($ncol_data) differs from header num columns ($ncol_head)", undef, 1, $FH_HR);
+  }
+
+  # cljust_AR must be undef, or have $ncol values all of which must be '0' or '1'
+  if(defined $cljust_AR) { 
+    if(scalar(@{$cljust_AR}) != $ncol) { 
+      ofile_FAIL("ERROR in $sub_name, data row 1 has $ncol columns, but column left justification array has data for " . scalar(@{$cljust_AR}) . " columns", undef, 1, $FH_HR);
+    }
+    for($c = 0; $c < $ncol; $c++) { 
+      if(($cljust_AR->[$c] != "0") && ($cljust_AR->[$c] != "1")) { 
+        ofile_FAIL("ERROR in $sub_name, cljust_AR column " . ($c+1) . " value is " . $cljust_AR->[$c] . ", but it must be 0 or 1", undef, 1, $FH_HR);
+      }
+    }
+  }
+  # if we get here, input has passed all contract checks
+
+  # enforce defaults
+  if(! defined $csep)      { $csep     = "  "; }
+  if(! defined $hsep)      { $hsep     = "-"; }
+  if(! defined $pfx_head)  { $pfx_head = "#";  }
+  if(! defined $pfx_com)   { $pfx_com  = "# "; }
+  if(! defined $pfx_data)  { $pfx_data = "";   }
+
+  # create the left justification array, either by copying input or making default
+  my @cljust_A = ();
+  if(! defined $cljust_AR) { 
+    for($c = 0; $c < $ncol; $c++) { $cljust_A[$c] = 1; } # default to left justification
+  }
+  else { 
+    @cljust_A = @{$cljust_AR};
+  }
+  $cljust_A[0] = 1; # first column must be left justified
+    
+  # determine column widths
+  my @w_A = ();
+  for($c = 0; $c < $ncol; $c++) { $w_A[$c] = 0; } # initialize
+  # consider data in each data row
+  for($r = 0; $r < $nrow_data; $r++) { 
+    if(scalar(@{$data_AAR->[$r]}) > 0) { 
+      $w_A[0] = utl_Max($w_A[0], length($data_AAR->[$r][0]) + length($pfx_data)); 
+      for($c = 1; $c < ($ncol-1); $c++) { # don't update w_A for final column
+        $w_A[$c] = utl_Max($w_A[$c], length($data_AAR->[$r][$c])); 
+      }
+    }
+  }
+  # consider headers in each header row
+  for($r = 0; $r < $nrow_head; $r++) { 
+    $w_A[0] = utl_Max($w_A[0], (length($head_AAR->[$r][0]) + length($pfx_head))); 
+    for($c = 1; $c < $ncol; $c++) { 
+      $w_A[$c] = utl_Max($w_A[$c], length($head_AAR->[$r][$c])); 
+    }
+  }
+
+  # output before table comment lines
+  my $line; 
+  my $out_line;
+  if(defined $bcom_AR) { 
+    foreach $line (@{$bcom_AR}) { 
+      $out_line = $pfx_com . $line; 
+      if($out_line !~ m/\n$/) { $out_line .= "\n"; } # add newline if nec
+      print $out_FH1 $out_line; 
+      if(defined $out_FH2) { print $out_FH2 $out_line; }
+    }
+  }
+
+  # create the header separation line
+  my $head_sep_line = undef;
+  if($hsep ne "") { 
+    $head_sep_line = $pfx_head . utl_StringMonoChar($w_A[0]-1, $hsep, undef);
+    if($ncol > 1) { $head_sep_line .= $csep; }
+    for($c = 1; $c < ($ncol-1); $c++) { 
+      $head_sep_line .= utl_StringMonoChar($w_A[$c], $hsep, undef);
+      $head_sep_line .= $csep;
+    }
+    # determine width of final head separation line token
+    my $w_final = 0; # max width of final header column over all rows 
+    for($r = 0; $r < $nrow_head; $r++) { 
+      $w_final = utl_Max($w_final, length($head_AAR->[$r][($ncol-1)]));
+    }
+    $head_sep_line .= utl_StringMonoChar($w_final, $hsep, undef) . "\n";
+  }
+  else { # $hsep eq ""
+    $head_sep_line = $pfx_head . "\n" 
+  }
+  my $empty_sep_line = ($empty_flag) ? ($pfx_com . "\n") : $head_sep_line;
+  
+  # output header lines
+  if(defined $head_AAR) { 
+    _ofile_helper_output_table_data($head_AAR, \@w_A, \@cljust_A, $pfx_head, $csep, $empty_sep_line, $out_FH1, $out_FH2);
+  }
+
+  # output header sep line
+  if($nrow_head > 0) { 
+    print $out_FH1 $head_sep_line;
+    if(defined $out_FH2) { print $out_FH2 $head_sep_line; }
+  }
+
+  # output data lines
+  _ofile_helper_output_table_data($data_AAR, \@w_A, \@cljust_A, $pfx_data, $csep, $empty_sep_line, $out_FH1, $out_FH2);
+
+  # output after table comment lines
+  if(defined $acom_AR) { 
+    foreach $line (@{$acom_AR}) { 
+      $out_line = $pfx_com . $line; 
+      if($out_line !~ m/\n$/) { $out_line .= "\n"; } # add newline if nec
+      print $out_FH1 $out_line; 
+      if(defined $out_FH2) { print $out_FH2 $line; }
+    }
+  }
+
+  return;
+}
+    
+#################################################################
+# Subroutine:  _ofile_helper_output_table_data()
+# Incept:      EPN, Fri Apr  5 06:59:23 2019
+#
+# Purpose:     Helper subroutine for ofile_TableHumanOutput()
+#              that prints 2D array text. (Called separately for
+#              header text and data text.)
+#              This subroutine does not validate anything (e.g.
+#              that all rows have same number columns) -- the 
+#              caller should have already done that.
+#
+# Arguments: 
+#   $AAR:        ref to 2D array of output text [0..$nrow-1][0..$ncol-1], 
+#                must be defined
+#   $w_AR:       ref to array of widths per column
+#   $lj_AR:      ref to '1'/'0' array of indicating if a column is left justified
+#   $pfx:        prefix for all lines, "" for none
+#   $csep:       column separation string, typically "  "
+#   $empty_line: line to output for empty arrays
+#   $FH1:        output file handle 1
+#   $FH2:        output file handle 2
+# 
+# Returns:       Nothing.
+#
+# Dies: Never. 
+################################################################# 
+sub _ofile_helper_output_table_data { 
+  my $nargs_expected = 8;
+  my $sub_name = "_ofile_helper_output_table_data";
+  if(scalar(@_) != $nargs_expected) { die "ERROR $sub_name entered with wrong number of input args"; }
+
+  my ($AAR, $w_AR, $lj_AR, $pfx, $csep, $empty_line, $FH1, $FH2) = (@_);
+
+  my $nrow = scalar(@{$AAR});
+  my $r; # counter over rows
+  my $c; # counter over columns
+  my $out_line = undef; # output line
+  for($r = 0; $r < $nrow; $r++) { 
+    my $ncol = scalar(@{$AAR->[$r]});
+    if($ncol > 0) { 
+      $out_line = sprintf("%-*s", $w_AR->[0], $pfx . $AAR->[$r][0]);
+      if($ncol > 1) { 
+        $out_line .= $csep; 
+        for($c = 1; $c < $ncol; $c++) { 
+          if($lj_AR->[$c]) { $out_line .= sprintf("%-*s", $w_AR->[$c], $AAR->[$r][$c]); }
+          else             { $out_line .= sprintf("%*s",  $w_AR->[$c], $AAR->[$r][$c]); }
+          if($c < ($ncol-1)) { $out_line .= $csep; }
+        }
+      }
+      $out_line .= "\n";
+      print $FH1 $out_line;
+      if(defined $FH2) { print $FH2 $out_line; }
+    }
+    else { # empty array, print empty line
+      print $FH1 $empty_line;
+      if(defined $FH2) { print $FH2 $empty_line; }
+    }
+  }
+
+  return;
+}
+
 
 ####################################################################
 # the next line is critical, a perl module must return a true value
