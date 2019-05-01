@@ -81,7 +81,6 @@ use Time::HiRes qw(gettimeofday);
 #
 # Arguments:
 #   $ofile_info_HHR:        REF to the 2D hash of output file information, ADDED TO HERE 
-#   $pkgstr:                string describing the package for 'FAILURE' messages
 #   $key2d:                 2D key for the file we're adding and opening, e.g. "log"
 #   $fullpath:              full path to the file we're adding and opening
 #   $mainout:               '1' to always output description of this file to 'main' when script ends
@@ -95,19 +94,19 @@ use Time::HiRes qw(gettimeofday);
 #################################################################
 sub ofile_OpenAndAddFileToOutputInfo { 
   my $sub_name = "ofile_OpenAndAddFileToOutputInfo";
-  my $nargs_expected = 6;
+  my $nargs_expected = 5;
   if(scalar(@_) != $nargs_expected) { die "ERROR $sub_name entered with wrong number of input args"; }
  
-  my ($ofile_info_HHR, $pkgstr, $key2d, $fullpath, $mainout, $desc) = @_;
+  my ($ofile_info_HHR, $key2d, $fullpath, $mainout, $desc) = @_;
 
   # this helper function does everything but open the file handle
-  ofile_HelperAddFileToOutputInfo($ofile_info_HHR, $pkgstr, $key2d, $fullpath, $mainout, $desc);
+  ofile_HelperAddFileToOutputInfo($ofile_info_HHR, $key2d, $fullpath, $mainout, $desc);
 
   # and open the file handle
   # we can only pass $FH_HR to ofile_FAIL if that hash already exists
   my $FH_HR = (defined $ofile_info_HHR->{"FH"}) ? $ofile_info_HHR->{"FH"} : undef;
   if(! open($ofile_info_HHR->{"FH"}{$key2d}, ">", $fullpath)) { 
-    ofile_FAIL("ERROR in $sub_name, unable to open $fullpath for writing.", $pkgstr, 1, $FH_HR); 
+    ofile_FAIL("ERROR in $sub_name, unable to open $fullpath for writing.", 1, $FH_HR); 
   }
 
   return;
@@ -127,7 +126,6 @@ sub ofile_OpenAndAddFileToOutputInfo {
 # Arguments:
 #   $ofile_info_HHR:        REF to the 2D hash of output file information, ADDED TO HERE 
 #                           for 1D key $key
-#   $pkgstr:                string describing the package for 'FAILURE' messages
 #   $key2d:                 2D key for the file we're adding and opening, e.g. "fasta"
 #   $fullpath:              full path to the closed file we're adding
 #   $mainout:               '1' to always output description of this file to 'main' when script ends
@@ -141,13 +139,13 @@ sub ofile_OpenAndAddFileToOutputInfo {
 #################################################################
 sub ofile_AddClosedFileToOutputInfo { 
   my $sub_name = "ofile_AddClosedFileToOutputInfo()";
-  my $nargs_expected = 6;
+  my $nargs_expected = 5;
   if(scalar(@_) != $nargs_expected) { die "ERROR $sub_name entered with wrong number of input args"; }
  
-  my ($ofile_info_HHR, $pkgstr, $key2d, $fullpath, $mainout, $desc) = @_;
+  my ($ofile_info_HHR, $key2d, $fullpath, $mainout, $desc) = @_;
 
   # this helper function does everything but set the file handle ("FH") value
-  ofile_HelperAddFileToOutputInfo($ofile_info_HHR, $pkgstr, $key2d, $fullpath, $mainout, $desc);
+  ofile_HelperAddFileToOutputInfo($ofile_info_HHR, $key2d, $fullpath, $mainout, $desc);
 
   # set FH value to undef
   $ofile_info_HHR->{"FH"}{$key2d} = undef;
@@ -169,7 +167,6 @@ sub ofile_AddClosedFileToOutputInfo {
 # Arguments:
 #   $ofile_info_HHR:        REF to the 2D hash of output file information, ADDED TO HERE 
 #                           for 1D key $key
-#   $pkgstr:                string describing the package for 'FAILURE' messages
 #   $key2d:                 2D key for the file we're adding and opening, e.g. "log"
 #   $fullpath:              full path to the file we're adding and opening
 #   $mainout:               '1' to always output description of this file to 'main' when script ends
@@ -183,23 +180,23 @@ sub ofile_AddClosedFileToOutputInfo {
 #################################################################
 sub ofile_HelperAddFileToOutputInfo { 
   my $sub_name = "ofile_HelperAddFileToOutputInfo";
-  my $nargs_expected = 6;
+  my $nargs_expected = 5;
   if(scalar(@_) != $nargs_expected) { die "ERROR $sub_name entered with wrong number of input args"; }
  
-  my ($ofile_info_HHR, $pkgstr, $key2d, $fullpath, $mainout, $desc) = @_;
+  my ($ofile_info_HHR, $key2d, $fullpath, $mainout, $desc) = @_;
 
   # we can only pass $FH_HR to ofile_FAIL if that hash already exists
   my $FH_HR = (defined $ofile_info_HHR->{"FH"}) ? $ofile_info_HHR->{"FH"} : undef;
 
   # make sure $mainout value is 0 or 1
   if(($mainout ne "0") && ($mainout ne "1")) { 
-    ofile_FAIL("ERROR in $sub_name, entered with invalid 'mainout' value of $mainout (should be 0 or 1)", $pkgstr, 1, $FH_HR);
+    ofile_FAIL("ERROR in $sub_name, entered with invalid 'mainout' value of $mainout (should be 0 or 1)", 1, $FH_HR);
   }
 
   # make sure we don't already have any information for this 2nd dim key $key2d:
   foreach my $key1d (keys (%{$ofile_info_HHR})) { 
     if(exists $ofile_info_HHR->{$key1d}{$key2d}) { 
-      ofile_FAIL("ERROR in $sub_name, trying to add file $fullpath with key $key2d, but that key already exists for first dim key $key1d", $pkgstr, 1, $FH_HR);
+      ofile_FAIL("ERROR in $sub_name, trying to add file $fullpath with key $key2d, but that key already exists for first dim key $key1d", 1, $FH_HR);
     }
   }
 
@@ -223,7 +220,7 @@ sub ofile_HelperAddFileToOutputInfo {
   }
 
   # validate that we've correctly updated the output info 2D hash
-  ofile_ValidateOutputFileInfoHashOfHashes($ofile_info_HHR, $pkgstr);
+  ofile_ValidateOutputFileInfoHashOfHashes($ofile_info_HHR);
 
   return;
 }
@@ -249,7 +246,6 @@ sub ofile_HelperAddFileToOutputInfo {
 #
 # Arguments:
 #   $ofile_info_HHR:  REF to hash of hashes of output file information
-#   $pkgstr:                string describing the package for 'FAILURE' messages
 # 
 # Returns: Number of elements in each and every 2d hash (except possibly %{$ofile_info_HHR->{"FH"}})
 #
@@ -259,10 +255,10 @@ sub ofile_HelperAddFileToOutputInfo {
 #################################################################
 sub ofile_ValidateOutputFileInfoHashOfHashes { 
   my $sub_name = "ofile_ValidateOutputFileInfoHashOfHashes()";
-  my $nargs_expected = 2;
+  my $nargs_expected = 1;
   if(scalar(@_) != $nargs_expected) { printf STDERR ("ERROR, $sub_name entered with %d != %d input arguments.\n", scalar(@_), $nargs_expected); exit(1); } 
  
-  my ($ofile_info_HHR, $pkgstr) = (@_);
+  my ($ofile_info_HHR) = (@_);
   
   # we can only pass $FH_HR to ofile_FAIL if that hash already exists
   my $FH_HR = (defined $ofile_info_HHR->{"FH"}) ? $ofile_info_HHR->{"FH"} : undef;
@@ -282,31 +278,31 @@ sub ofile_ValidateOutputFileInfoHashOfHashes {
       }
     }
     if($found_it == 0) { 
-      ofile_FAIL("ERROR in $sub_name, unexpected 1d key $key1d exists.", $pkgstr, 1, $FH_HR);
+      ofile_FAIL("ERROR in $sub_name, unexpected 1d key $key1d exists.", 1, $FH_HR);
     }     
   } 
   
   # make sure all 2nd dim keys for all 1st dim keys are the same as the 2nd dim keys for 1st dim key "order"
   if(! defined $ofile_info_HHR->{"order"}) { 
-    ofile_FAIL("ERROR in $sub_name, expected 1d key order does not exist.", $pkgstr, 1, $FH_HR);
+    ofile_FAIL("ERROR in $sub_name, expected 1d key order does not exist.", 1, $FH_HR);
   }
   foreach my $key1d (@same_keys1d_A) { 
     if($key1d ne "order") { # skip "order"
       if(! defined $ofile_info_HHR->{$key1d}) { 
-        ofile_FAIL("ERROR in $sub_name, expected 1d key $key1d does not exist.", $pkgstr, $FH_HR);
+        ofile_FAIL("ERROR in $sub_name, expected 1d key $key1d does not exist.", 1, $FH_HR);
       }
       # we make sure the set of 2d keys in $ofile_info_HHR->{"order"} and $ofile_info_HHR->{$key1d} are 
       # identical in 2 steps:
       # 1) make sure all 2d keys from $ofile_info_HHR->{"order"} are also in $ofile_info_HHR->{"order"}
       foreach $key2d (keys %{$ofile_info_HHR->{"order"}}) { 
         if(! defined $ofile_info_HHR->{$key1d}{$key2d}) { 
-          ofile_FAIL("ERROR in $sub_name, 2nd dim key $key2d exists for ofile_info_HHR->{order} but not for ofile_info_HHR->{$key1d}", $pkgstr, 1, $FH_HR); 
+          ofile_FAIL("ERROR in $sub_name, 2nd dim key $key2d exists for ofile_info_HHR->{order} but not for ofile_info_HHR->{$key1d}", 1, $FH_HR); 
         }
       }
       # 2) make sure all the 2d keys in $ofile_info_HHR->{$key1d} are also in $ofile_info_HHR->{"order"}
       foreach $key2d (keys %{$ofile_info_HHR->{$key1d}}) { 
         if(! defined $ofile_info_HHR->{"order"}{$key2d}) { 
-          ofile_FAIL("ERROR in $sub_name, 2nd dim key $key2d exists for ofile_info_HHR->{order} but not for ofile_info_HHR->{$key1d}", $pkgstr, 1, $FH_HR); 
+          ofile_FAIL("ERROR in $sub_name, 2nd dim key $key2d exists for ofile_info_HHR->{order} but not for ofile_info_HHR->{$key1d}", 1, $FH_HR); 
         }
       }
     }
@@ -323,7 +319,7 @@ sub ofile_ValidateOutputFileInfoHashOfHashes {
   }
   for ($i = 1; $i <= $nkey2d; $i++) { 
     if($check_A[$i] != 1) { 
-      ofile_FAIL("ERROR in $sub_name, invalid values for ofile_info_HH{order}, $nkey2d 2nd dim keys, but value $i does not exist", $pkgstr, 1, $FH_HR);
+      ofile_FAIL("ERROR in $sub_name, invalid values for ofile_info_HH{order}, $nkey2d 2nd dim keys, but value $i does not exist", 1, $FH_HR);
     }
   }
 
@@ -448,7 +444,6 @@ sub ofile_OutputProgressComplete {
 #
 # Arguments: 
 #  $total_secs:            total number of seconds, "" to not print timing
-#  $pkgstr:                string describing the package for 'FAILURE' messages
 #  $odir:                  output directory, if "", files were put in cwd
 #  $ofile_info_HHR:        REF to the 2D hash of output file information
 #
@@ -458,12 +453,12 @@ sub ofile_OutputProgressComplete {
 #
 ####################################################################
 sub ofile_OutputConclusionAndCloseFiles { 
-  my $nargs_expected = 4;
+  my $nargs_expected = 3;
   my $sub_name = "ofile_OutputConclusionAndCloseFiles()";
   if(scalar(@_) != $nargs_expected) { printf STDERR ("ERROR, $sub_name entered with %d != %d input arguments.\n", scalar(@_), $nargs_expected); exit(1); } 
-  my ($total_secs, $pkgstr, $odir, $ofile_info_HHR) = @_;
+  my ($total_secs, $odir, $ofile_info_HHR) = @_;
 
-  ofile_ValidateOutputFileInfoHashOfHashes($ofile_info_HHR, $pkgstr);
+  ofile_ValidateOutputFileInfoHashOfHashes($ofile_info_HHR);
 
   my $log_FH  = $ofile_info_HHR->{"FH"}{"log"};
   my $cmd_FH  = $ofile_info_HHR->{"FH"}{"cmd"};
@@ -485,7 +480,7 @@ sub ofile_OutputConclusionAndCloseFiles {
   }
   my $width_desc = length("# ") + ofile_MaxLengthScalarValueInArray(\@tmp_A) + length(" saved in:");
   my $cur_idx = 1;
-  my $num_ofile = ofile_ValidateOutputFileInfoHashOfHashes($ofile_info_HHR, $pkgstr); # this function validates we have exactly 1 of each "order" value of 1..$num_ofile
+  my $num_ofile = ofile_ValidateOutputFileInfoHashOfHashes($ofile_info_HHR); # this function validates we have exactly 1 of each "order" value of 1..$num_ofile
   for(my $i = 1; $i <= $num_ofile; $i++) { 
     foreach $key2d (keys (%{$ofile_info_HHR->{"order"}})) { 
       if(($ofile_info_HHR->{"order"}{$key2d} == $i) && 
@@ -501,14 +496,14 @@ sub ofile_OutputConclusionAndCloseFiles {
     ofile_OutputTiming("# Elapsed time: ", $total_secs, 1, $log_FH); 
     ofile_OutputString($log_FH, 1, "#                hh:mm:ss\n");
     ofile_OutputString($log_FH, 1, "# \n");
-    ofile_OutputString($log_FH, 1, "# " . $pkgstr . "-SUCCESS\n");
+    ofile_OutputString($log_FH, 1, "[ok]\n");
   }
 
   if(defined $cmd_FH) { 
     ofile_OutputString($cmd_FH, 0, "# " . `date`);      # prints date,        e.g.: 'Mon Feb 22 16:37:09 EST 2016'
     ofile_OutputString($cmd_FH, 0, "# " . `uname -a`);  # prints system info, e.g.: 'Linux cbbdev13 2.6.32-573.7.1.el6.x86_64 #1 SMP Tue Sep 22 22:00:00 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux'
-    if($total_secs ne "") { # don't print this if rvr-align is caller
-      ofile_OutputString($cmd_FH, 0, "# " . $pkgstr . "-SUCCESS\n");
+    if($total_secs ne "") { 
+      ofile_OutputString($cmd_FH, 0, "[ok]\n");
     }
   }
   
@@ -833,7 +828,6 @@ sub ofile_MaxLengthScalarValueInArray {
 #
 # Arguments: 
 #   $filename:   file that we couldn't open
-#   $pkgstr:     string describing the package for 'FAILURE' messages
 #   $c_sub_name: name of calling subroutine name
 #   $status:     error status
 #   $action:     "reading", "writing", "appending"
@@ -843,16 +837,16 @@ sub ofile_MaxLengthScalarValueInArray {
 #
 ################################################################# 
 sub ofile_FileOpenFailure { 
-  my $nargs_expected = 6;
+  my $nargs_expected = 5;
   my $sub_name = "ofile_FileOpenFailure()";
   if(scalar(@_) != $nargs_expected) { printf STDERR ("ERROR, $sub_name entered with %d != %d input arguments.\n", scalar(@_), $nargs_expected); exit(1); } 
-  my ($filename, $pkgstr, $c_sub_name, $status, $action, $FH_HR) = @_;
+  my ($filename, $c_sub_name, $status, $action, $FH_HR) = @_;
 
   if(($action eq "reading") && (! (-e $filename))) { 
-    ofile_FAIL(sprintf("ERROR, could not open %s%s for reading. It does not exist.", $filename, (defined $c_sub_name) ? " in subroutine $c_sub_name" : ""), $pkgstr, $status, $FH_HR);
+    ofile_FAIL(sprintf("ERROR, could not open %s%s for reading. It does not exist.", $filename, (defined $c_sub_name) ? " in subroutine $c_sub_name" : ""), $status, $FH_HR);
   }
   else { 
-    ofile_FAIL(sprintf("ERROR, could not open %s%s for %s", $filename, (defined $c_sub_name) ? " in subroutine $c_sub_name" : "", $action), $pkgstr, $status, $FH_HR);
+    ofile_FAIL(sprintf("ERROR, could not open %s%s for %s", $filename, (defined $c_sub_name) ? " in subroutine $c_sub_name" : "", $action), $status, $FH_HR);
   }
 
   return; # never reached
@@ -868,7 +862,6 @@ sub ofile_FileOpenFailure {
 #
 # Arguments: 
 #   $errmsg:  the error message to write
-#   $pkgstr:  string describing the package for FAILURE message, can be undef
 #   $status:  error status to exit with
 #   $FH_HR:   ref to hash of file handles, including "log" and "cmd"
 # 
@@ -876,7 +869,7 @@ sub ofile_FileOpenFailure {
 #
 ################################################################# 
 sub ofile_FAIL { 
-  my $nargs_expected = 4;
+  my $nargs_expected = 3;
   my $sub_name = "ofile_FAIL()";
   if(scalar(@_) != $nargs_expected) { 
     if(scalar(@_) > 0) { 
@@ -887,7 +880,7 @@ sub ofile_FAIL {
     }
     exit(1); 
   }
-  my ($errmsg, $pkgstr, $status, $FH_HR) = @_;
+  my ($errmsg, $status, $FH_HR) = @_;
   
   if($errmsg !~ m/\n$/) { $errmsg .= "\n\n"; }
   else                  { $errmsg .= "\n"; }
@@ -898,11 +891,11 @@ sub ofile_FAIL {
     my $log_FH = $FH_HR->{"log"};
     if(defined $cmd_FH) { 
       print  $cmd_FH $errmsg;
-      printf $cmd_FH ("# %sFAILURE\n", (defined $pkgstr) ? $pkgstr . "-" : "");
+      printf $cmd_FH ("[fail]\n");
     }
     if(defined $log_FH) {
       print  $log_FH $errmsg;
-      printf $log_FH ("# %sFAILURE\n", (defined $pkgstr) ? $pkgstr . "-" : "");
+      printf $log_FH ("[fail]\n");
     }
     # close each file handle
     foreach my $key (keys %{$FH_HR}) { 
