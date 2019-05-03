@@ -1,14 +1,14 @@
 # epn-ofile.pm
-# version 0.08
-# April 2019
+# version 0.09
+# May 2019
 #
 # This file explains some aspects of the epn-ofile.pm module.
 # 
 # The comments in epn-ofile.pm are currently the only documentation
-# for this module. For an example of usage, see ribovore and
-# dnaorg_scripts, which, as of this writing, are the only two 
-# packages that use epn-ofile.pm:
+# for this module. For an example of usage, see vadr and ribovore
+# which, as of this writing, are the only two packages that use
+# epn-ofile.pm:
 #
+# https://github.com/nawrockie/vadr.git
 # https://github.com/nawrockie/ribovore.git
-# https://github.com/nawrockie/dnaorg_scripts.git
 # 
