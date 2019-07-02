@@ -83,8 +83,8 @@ use Time::HiRes qw(gettimeofday);
 #   $ofile_info_HHR:        REF to the 2D hash of output file information, ADDED TO HERE 
 #   $key2d:                 2D key for the file we're adding and opening, e.g. "log"
 #   $fullpath:              full path to the file we're adding and opening
-#   $mainout:               '1' to always output description of this file to 'main' when script ends
-#                           '0' to only output a description of this file to the "list" file
+#   $mainout:               '1' to output description of this file to 'main' when script ends, '0' not to
+#   $listout:               '1' to output description of this file to {"FH"}{"list"} list file, '0' not to
 #   $desc:                  description of the file we're adding and opening
 #
 # Returns:    void
@@ -94,13 +94,13 @@ use Time::HiRes qw(gettimeofday);
 #################################################################
 sub ofile_OpenAndAddFileToOutputInfo { 
   my $sub_name = "ofile_OpenAndAddFileToOutputInfo";
-  my $nargs_expected = 5;
+  my $nargs_expected = 6;
   if(scalar(@_) != $nargs_expected) { die "ERROR $sub_name entered with wrong number of input args"; }
  
-  my ($ofile_info_HHR, $key2d, $fullpath, $mainout, $desc) = @_;
+  my ($ofile_info_HHR, $key2d, $fullpath, $mainout, $listout, $desc) = @_;
 
   # this helper function does everything but open the file handle
-  ofile_HelperAddFileToOutputInfo($ofile_info_HHR, $key2d, $fullpath, $mainout, $desc);
+  ofile_HelperAddFileToOutputInfo($ofile_info_HHR, $key2d, $fullpath, $mainout, $listout, $desc);
 
   # and open the file handle
   # we can only pass $FH_HR to ofile_FAIL if that hash already exists
@@ -128,8 +128,8 @@ sub ofile_OpenAndAddFileToOutputInfo {
 #                           for 1D key $key
 #   $key2d:                 2D key for the file we're adding and opening, e.g. "fasta"
 #   $fullpath:              full path to the closed file we're adding
-#   $mainout:               '1' to always output description of this file to 'main' when script ends
-#                           '0' to only output a description of this file to the "list" file
+#   $mainout:               '1' to output description of this file to 'main' when script ends, '0' not to
+#   $listout:               '1' to output description of this file to {"FH"}{"list"} list file, '0' not to
 #   $desc:                  description of the closed file we're adding 
 #
 # Returns:    void
@@ -139,13 +139,13 @@ sub ofile_OpenAndAddFileToOutputInfo {
 #################################################################
 sub ofile_AddClosedFileToOutputInfo { 
   my $sub_name = "ofile_AddClosedFileToOutputInfo()";
-  my $nargs_expected = 5;
+  my $nargs_expected = 6;
   if(scalar(@_) != $nargs_expected) { die "ERROR $sub_name entered with wrong number of input args"; }
  
-  my ($ofile_info_HHR, $key2d, $fullpath, $mainout, $desc) = @_;
+  my ($ofile_info_HHR, $key2d, $fullpath, $mainout, $listout, $desc) = @_;
 
   # this helper function does everything but set the file handle ("FH") value
-  ofile_HelperAddFileToOutputInfo($ofile_info_HHR, $key2d, $fullpath, $mainout, $desc);
+  ofile_HelperAddFileToOutputInfo($ofile_info_HHR, $key2d, $fullpath, $mainout, $listout, $desc);
 
   # set FH value to undef
   $ofile_info_HHR->{"FH"}{$key2d} = undef;
@@ -169,8 +169,8 @@ sub ofile_AddClosedFileToOutputInfo {
 #                           for 1D key $key
 #   $key2d:                 2D key for the file we're adding and opening, e.g. "log"
 #   $fullpath:              full path to the file we're adding and opening
-#   $mainout:               '1' to always output description of this file to 'main' when script ends
-#                           '0' to only output a description of this file to the "list" file
+#   $mainout:               '1' to output description of this file to 'main' when script ends, '0' not to
+#   $listout:               '1' to output description of this file to {"FH"}{"list"} list file, '0' not to
 #   $desc:                  description of the file we're adding and opening
 #
 # Returns:    void
@@ -180,10 +180,10 @@ sub ofile_AddClosedFileToOutputInfo {
 #################################################################
 sub ofile_HelperAddFileToOutputInfo { 
   my $sub_name = "ofile_HelperAddFileToOutputInfo";
-  my $nargs_expected = 5;
+  my $nargs_expected = 6;
   if(scalar(@_) != $nargs_expected) { die "ERROR $sub_name entered with wrong number of input args"; }
  
-  my ($ofile_info_HHR, $key2d, $fullpath, $mainout, $desc) = @_;
+  my ($ofile_info_HHR, $key2d, $fullpath, $mainout, $listout, $desc) = @_;
 
   # we can only pass $FH_HR to ofile_FAIL if that hash already exists
   my $FH_HR = (defined $ofile_info_HHR->{"FH"}) ? $ofile_info_HHR->{"FH"} : undef;
@@ -191,6 +191,14 @@ sub ofile_HelperAddFileToOutputInfo {
   # make sure $mainout value is 0 or 1
   if(($mainout ne "0") && ($mainout ne "1")) { 
     ofile_FAIL("ERROR in $sub_name, entered with invalid 'mainout' value of $mainout (should be 0 or 1)", 1, $FH_HR);
+  }
+  # make sure $listout value is 0 or 1
+  if(($listout ne "0") && ($listout ne "1")) { 
+    ofile_FAIL("ERROR in $sub_name, entered with invalid 'listout' value of $listout (should be 0 or 1)", 1, $FH_HR);
+  }
+  # if $mainout is '1', $listout must be '1' also
+  if(($mainout eq "1") && ($listout ne "1")) { 
+    ofile_FAIL("ERROR in $sub_name, entered with invalid 'mainout'/'listout' value combination mainout:$mainout listout:$listout, if 'mainout' is '1', 'listout' must be as well", 1, $FH_HR);
   }
 
   # make sure we don't already have any information for this 2nd dim key $key2d:
@@ -208,12 +216,13 @@ sub ofile_HelperAddFileToOutputInfo {
   $ofile_info_HHR->{"nodirpath"}{$key2d} = $nodirpath;
   $ofile_info_HHR->{"desc"}{$key2d}      = $desc;
   $ofile_info_HHR->{"mainout"}{$key2d}   = $mainout;
+  $ofile_info_HHR->{"listout"}{$key2d}   = $listout;
 
   # output the description of this file to the list file
   my $list_FH = ((defined $ofile_info_HHR) && (defined $ofile_info_HHR->{"FH"}) && (exists $ofile_info_HHR->{"FH"}{"list"})) ? 
       $ofile_info_HHR->{"FH"}{"list"} : undef;
 
-  if(defined $list_FH) { 
+  if((defined $list_FH) && ($ofile_info_HHR->{"listout"}{$key2d})) { 
     my $width_desc = length("# ") + ofile_MaxLengthScalarValueInHash($ofile_info_HHR->{"desc"}) + length(" saved in:");
     if($width_desc < 80) { $width_desc = 80; }
     ofile_OutputString($list_FH, 0, sprintf("# %-*s %s\n", $width_desc, $ofile_info_HHR->{"desc"}{$key2d} . " saved in:", $ofile_info_HHR->{"nodirpath"}{$key2d}));
@@ -236,8 +245,8 @@ sub ofile_HelperAddFileToOutputInfo {
 #             "order": integer, the order in which this element was added
 #             "fullpath":  full path to the file 
 #             "nodirpath": file name, "fullpath" minus directories
-#             "mainout":   '1' if this file should be listed in the main output,
-#                          '0' if it should only be listed in the .list file
+#             "mainout":   '1' to output description of this file to 'main' when script ends, '0' not to
+#             "listout":   '1' to output description of this file to {"FH"}{"list"} list file, '0' not to
 #             "desc":      short description of the file
 #             "FH":        open file handle for this file, or undef             
 #
@@ -263,7 +272,7 @@ sub ofile_ValidateOutputFileInfoHashOfHashes {
   # we can only pass $FH_HR to ofile_FAIL if that hash already exists
   my $FH_HR = (defined $ofile_info_HHR->{"FH"}) ? $ofile_info_HHR->{"FH"} : undef;
 
-  my @same_keys1d_A = ("order", "fullpath", "nodirpath", "mainout", "desc"); # all of these 2nd dim hashes should have same set of keys
+  my @same_keys1d_A = ("order", "fullpath", "nodirpath", "mainout", "listout", "desc"); # all of these 2nd dim hashes should have same set of keys
   my @all_keys1d_A   = (@same_keys1d_A, "FH");             # all 1d keys
   my $i;     # a counter
   my $key1d; # a 1st dim key
@@ -470,7 +479,7 @@ sub ofile_OutputConclusionAndCloseFiles {
   # is 1 to the $log file and stdout, we already printed the descriptions
   # to the list file in helperAddFileToOutputInfo().
   ofile_OutputString($log_FH, 1, sprintf("#\n"));
-  # create a temporary array with description of files with 'outmain' set to 1 (we'll only print these)
+  # create a temporary array with description of files with 'mainout' set to 1 (we'll only print these)
   # so we get pretty formatting
   my @tmp_A = ();
   foreach $key2d (keys (%{$ofile_info_HHR->{"desc"}})) { 
